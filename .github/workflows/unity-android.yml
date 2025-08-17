@@ -1,0 +1,47 @@
+name: Android Build (Unity)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('**/Packages/manifest.json') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Unity - Activate
+        uses: game-ci/unity-activate@v2
+        with:
+          unityLicense: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Unity - Build Android AAB
+        uses: game-ci/unity-builder@v3
+        env:
+          ANDROID_OUTPUT_NAME: EternalHero_Alpha01
+          ANDROID_OUTPUT_DIR: Builds/Android
+        with:
+          unityVersion: 2022.3.16f1
+          targetPlatform: Android
+          buildMethod: BuildAndroid.BuildAAB
+          androidKeystoreName: ${{ github.workspace }}/user.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EternalHero_Android_AAB
+          path: Builds/Android/*.aab
